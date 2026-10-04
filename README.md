@@ -4,7 +4,7 @@ See what Claude Code keeps about your sessions on your own disk, find secrets th
 
 Free and local: Python 3 standard library, no network calls, no API key, works on any Claude plan.
 
-![Session Lens report](docs/screenshots/report-light.jpg)
+![Session Lens report: summary and masked secrets](docs/screenshots/report-light.png)
 
 ## Why
 
@@ -43,7 +43,15 @@ The report shows:
 - **Per-session detail**: project, branch, files read and changed, commands run, URLs fetched, MCP servers used.
 - **Retention**: your current `cleanupPeriodDays` and the age of your oldest transcript.
 
-See [`examples/sample-report.html`](examples/sample-report.html), generated from synthetic data.
+Each session expands to show what Claude touched:
+
+![Sessions table with one session expanded](docs/screenshots/sessions.png)
+
+The report follows your system's dark mode:
+
+![Session Lens report in dark mode](docs/screenshots/report-dark.png)
+
+Screenshots come from [`examples/sample-report.html`](examples/sample-report.html), generated from synthetic sessions.
 
 Redaction keeps transcripts valid JSONL so `--resume` still works, rewrites atomically, skips binary files, and skips transcripts touched in the last two minutes (the live session) unless you pass `--include-active`.
 
