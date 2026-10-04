@@ -1,0 +1,14 @@
+{
+  "name": "session-lens",
+  "description": "Transparency and secret hygiene for Claude Code session transcripts. Local only, no extra subscription.",
+  "owner": {
+    "name": "Akhmad Mamirov"
+  },
+  "plugins": [
+    {
+      "name": "session-lens",
+      "source": "./",
+      "description": "Transparency and secret hygiene for Claude Code session transcripts. Local only."
+    }
+  ]
+}
