@@ -30,7 +30,7 @@ DEFAULT_RETENTION_DAYS = 30
 
 # Local stores besides transcripts, with a plain-language description.
 STORES = [
-    ("projects", "Session transcripts", "Every prompt, every reply (including thinking), every tool call and its full output: file contents Claude read, command output, fetched pages."),
+    ("projects", "Session transcripts", "Every prompt, every reply (including thinking), every tool call and its full output: file contents Claude read, command output, fetched pages. Large outputs are saved as separate files under each session's tool-results folder."),
     ("history.jsonl", "Prompt history", "Each prompt you typed, plus pasted content, used for up-arrow recall."),
     ("file-history", "File checkpoints", "Copies of files taken before Claude edited them, used for rewind."),
     ("paste-cache", "Paste cache", "Large pasted blocks stored outside the transcript."),
@@ -211,13 +211,16 @@ def scan_transcript(path, findings):
     return s
 
 
-def scan_plain(path, findings, kind):
+def scan_plain(path, findings, kind, session=None):
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        data = path.read_bytes()
     except OSError:
         return
+    if b"\0" in data[:8192]:
+        return  # binary
+    text = data.decode("utf-8", errors="replace")
     for rid, label, sev, value, _, _ in rules.find(text):
-        findings.add(rid, label, sev, value, str(path), kind, None)
+        findings.add(rid, label, sev, value, str(path), kind, session)
 
 
 def scan():
@@ -226,8 +229,17 @@ def scan():
     projects = HOME / "projects"
     for p in sorted(projects.rglob("*.jsonl")) if projects.exists() else []:
         sessions.append(scan_transcript(p, findings))
-    for p in sorted(projects.rglob("memory/*.md")) if projects.exists() else []:
-        scan_plain(p, findings, "memory file")
+    # Everything else under projects/: large tool outputs Claude Code saves beside the
+    # transcript (<session>/tool-results/), memory files, and session metadata.
+    for p in sorted(projects.rglob("*")) if projects.exists() else []:
+        if not p.is_file() or p.suffix == ".jsonl" or p.stat().st_size > 20_000_000:
+            continue
+        if "tool-results" in p.parts:
+            scan_plain(p, findings, "tool output", p.parent.parent.name)
+        elif "memory" in p.parts:
+            scan_plain(p, findings, "memory file")
+        else:
+            scan_plain(p, findings, "session metadata")
 
     hist = HOME / "history.jsonl"
     if hist.exists():

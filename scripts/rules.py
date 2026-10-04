@@ -37,9 +37,9 @@ RULES = [
     ("url_credentials", "Password inside a URL", "high",
      re.compile(r"\b[a-z][a-z0-9+.\-]{1,20}://[^\s:/@\"']{1,64}:([^\s@/\"']{3,128})@[^\s/\"']+"), 1),
     ("secret_assignment", "Secret-looking assignment", "medium",
-     re.compile(r"(?i)\b[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*[\"']?\s*[=:]\s*[\"']?([A-Za-z0-9/+_\-.!@#$%^&*]{12,})"), 1),
+     re.compile(r"(?i)\b([A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*)[\"']?\s*[=:]\s*[\"']?([A-Za-z0-9/+_\-.!@#$%^&*]{12,})"), 2),
     ("credit_card", "Payment card number", "high",
-     re.compile(r"(?<![\d.:-])(?:4\d{3}|5[1-5]\d{2}|2[2-7]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))(?:[ -]?\d){9,15}(?![\d.:-])"), 0),
+     re.compile(r"(?<![\d.:\-=/#?&_])(?:4\d{3}|5[1-5]\d{2}|2[2-7]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))(?:[ -]?\d){9,15}(?![\d.:-])"), 0),
 ]
 
 SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2}
@@ -61,6 +61,13 @@ def _luhn(digits):
         total += d
         alt = not alt
     return total % 10 == 0
+
+
+# Assignments whose value is not a secret: token counters (max_tokens = 4096,
+# total_tokens = event.usage...), dotted code expressions, and ISO timestamps.
+_COUNTER_KEY = re.compile(r"(?i)(?:tokens|token_?(?:count|limit|usage|budget))$")
+_CODE_EXPR = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+$")
+_ISO_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[T ]|$)")
 
 
 def _entropy_ok(value):
@@ -86,6 +93,9 @@ def find(text):
                     continue
             if rid in ("secret_assignment", "url_credentials"):
                 if _PLACEHOLDER.match(value) or not _entropy_ok(value) or not re.search(r"[A-Za-z]", value):
+                    continue
+            if rid == "secret_assignment":
+                if _COUNTER_KEY.search(m.group(1)) or _CODE_EXPR.match(value) or _ISO_TIME.match(value):
                     continue
             seen_spans.append((start, end))
             yield rid, label, sev, value, start, end

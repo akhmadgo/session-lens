@@ -49,6 +49,17 @@ Redaction keeps transcripts valid JSONL so `--resume` still works, rewrites atom
 
 **Redacting does not revoke a key.** Anything that appeared in a session was also sent to the model. Rotate it at the provider.
 
+## What it reads, writes and runs
+
+Nothing leaves your machine: no network calls, no telemetry, no third-party packages.
+
+| | |
+|---|---|
+| **Reads** | `~/.claude/projects/` (transcripts and saved tool outputs), `history.jsonl`, `file-history/`, `paste-cache/`, `shell-snapshots/`, `todos/`, `debug/`, `settings.json`. Honors `CLAUDE_CONFIG_DIR`. |
+| **Writes** | `~/.claude/session-lens/report.html` (mode 600). With `redact --apply`, rewrites the files above in place. |
+| **Runs** | `python3` for the scripts and hook. `scan` opens the report with your system opener (`open` on macOS, `xdg-open` on Linux, `start` on Windows); pass `--no-open` to skip it. |
+| **Hook** | Reads the prompt or tool call Claude Code passes to it on stdin, and prints an allow, ask or block decision. It stores nothing. |
+
 ## Guard hook (prevention)
 
 Installed automatically with the plugin:
@@ -89,6 +100,12 @@ What testing changed:
 - **Guard hook.** 14 cases checked. It no longer prompts for `.env.example`, `*.pub` public keys or `cp .env.example .env`, and still asks for `.env`, private SSH keys, `secrets.yml`, `printenv` and `gh auth token`.
 
 Synthetic end-to-end check: transcripts seeded with fake AWS, GitHub, Anthropic and database-URL secrets were scanned (all found), redacted with `--apply` (every line still valid JSON), and rescanned (0 findings).
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests
+```
 
 ## Limits
 
