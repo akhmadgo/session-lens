@@ -22,7 +22,7 @@ So if Claude ran `cat .env` once, those keys now sit in a transcript until the r
 ## Install
 
 ```
-/plugin marketplace add <your-github-user>/session-lens
+/plugin marketplace add akhmadgo/session-lens
 /plugin install session-lens@session-lens
 ```
 
@@ -68,6 +68,27 @@ Disable with `SESSION_LENS_GUARD=off`. The guard never fails closed: if it error
   }
 }
 ```
+
+## Field test
+
+Numbers from running it on a real `~/.claude` before release. Only totals are shown here; no values from the scanned machine.
+
+| | |
+|---|---|
+| Data scanned | 31 sessions, 31 MB of transcripts, plus prompt history, file checkpoints and shell snapshots |
+| Scan time | about 5 s on a laptop |
+| Retention | oldest transcript 26 days old against the default 30-day `cleanupPeriodDays` |
+| Exposure | 23 distinct files whose full contents were kept in transcripts; 314 shell commands stored with their output |
+| Findings | 12 medium-severity secret-looking assignments in tool output; no critical keys outside the deliberate test fixtures |
+
+What testing changed:
+
+- **Card numbers.** The first scan flagged about 150 "card numbers" in `history.jsonl`. They were 13-digit millisecond timestamps, about 1 in 10 of which pass the Luhn check by chance. The rule now requires real issuer prefixes (Visa, Mastercard, Amex, Discover) and real card lengths; the false positives went to zero.
+- **Assignments.** Values with no letters (dates such as `TOKEN_EXPIRY=2026-09-01`) no longer count as secrets.
+- **Redaction markers.** `[REDACTED:...]` was itself matching the password-in-URL rule on a rescan; it is now excluded, so a redacted store rescans clean.
+- **Guard hook.** 14 cases checked. It no longer prompts for `.env.example`, `*.pub` public keys or `cp .env.example .env`, and still asks for `.env`, private SSH keys, `secrets.yml`, `printenv` and `gh auth token`.
+
+Synthetic end-to-end check: transcripts seeded with fake AWS, GitHub, Anthropic and database-URL secrets were scanned (all found), redacted with `--apply` (every line still valid JSON), and rescanned (0 findings).
 
 ## Limits
 
