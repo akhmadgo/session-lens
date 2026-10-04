@@ -1,8 +1,18 @@
 {
   "name": "session-lens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "See what Claude Code stores about your sessions on disk, find leaked secrets in transcripts, redact them, and stop new ones from getting in. Local only, no network, no extra subscription.",
-  "author": { "name": "Akhmad Mamirov" },
+  "author": {
+    "name": "Akhmad Mamirov"
+  },
   "license": "MIT",
-  "keywords": ["privacy", "security", "transcripts", "secrets", "redaction"]
+  "keywords": [
+    "privacy",
+    "security",
+    "transcripts",
+    "secrets",
+    "redaction"
+  ],
+  "homepage": "https://github.com/akhmadgo/session-lens",
+  "repository": "https://github.com/akhmadgo/session-lens"
 }
