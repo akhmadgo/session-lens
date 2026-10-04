@@ -1,0 +1,8 @@
+{
+  "name": "session-lens",
+  "version": "0.1.0",
+  "description": "See what Claude Code stores about your sessions on disk, find leaked secrets in transcripts, redact them, and stop new ones from getting in. Local only, no network, no extra subscription.",
+  "author": { "name": "Akhmad Mamirov" },
+  "license": "MIT",
+  "keywords": ["privacy", "security", "transcripts", "secrets", "redaction"]
+}
